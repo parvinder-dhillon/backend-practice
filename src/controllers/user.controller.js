@@ -1,9 +1,9 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/apiError.js"
-import { User } from "../models/user.model.js"
+import { ApiError } from "../utils/apiError.js";
+import { User } from "../models/user.model.js";
 import { apiResponse } from "../utils/apiResponse.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js"
-
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import jwt from "jsonwebtoken";
 
 // Method for genrate access token and refresh token becouse we have to genrate this more than one time 
 // this is our internal method means no database call that's why there is no need for asynchandler method
@@ -111,7 +111,7 @@ const loginUser = asyncHandler(async (req, res) => {
    //    throw new ApiError(400, "username or password is required ")
    // }
 
-   if (!(userName || email)) {
+   if (!(userName && email)) {
       throw new ApiError(400, "username/email and password are required")
     }
    const user = await User.findOne({
@@ -186,4 +186,44 @@ const logoutUser = asyncHandler(async (req,res)=>{
 
 })
 
-export { registerUser, loginUser , logoutUser}
+
+const refreshAccessToken =asyncHandler(async (req,res)=>{
+   const incomingRefreshToken=req.cookie.refreshToken || req.body.refreshToken
+   if(!incomingRefreshToken){
+      throw new ApiError(401,"unauthorized request")
+   }
+  try {
+    const decodedToken = jwt.verify(
+       incomingRefreshToken,
+       process.env.REFRESH_TOKEN_SECRET
+    )
+    const user = await User.findById(decodedToken?._id)
+    if(!user){
+       throw new ApiError(401,"invalid refresh token")
+    }
+    if(incomingRefreshToken !== user?.refreshToken){
+       throw new ApiError(401,"refresh token is expired or used")
+    }
+    const options={
+       httpOnly:true,
+       secure:true
+    }
+    const{accessToken,newrefreshToken} = await generateAccessTokenAndRefreshTokens(user._id)
+    return res
+    .status(200)
+    .cookie("accessToken",accessToken)
+    .cookie("refreshToken",newrefreshToken)
+    .json(
+       new apiResponse(
+          200,
+          {accessToken, refreshToken:newrefreshToken},
+          "Access token refreshed successfully"
+       )
+    )
+  } catch (error) {
+   throw new ApiError(401,error?.message||"invalid refresh token")
+  }
+
+})
+
+export { registerUser, loginUser , logoutUser,refreshAccessToken}
