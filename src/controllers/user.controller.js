@@ -185,8 +185,7 @@ const logoutUser = asyncHandler(async (req, res) => {
       .json(new apiResponse(200, {}, "user logged out"))
 
 })
-
-
+//   refreshAccesstoken
 const refreshAccessToken = asyncHandler(async (req, res) => {
    const incomingRefreshToken = req.cookie.refreshToken || req.body.refreshToken
    if (!incomingRefreshToken) {
@@ -225,7 +224,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
    }
 
 })
-
+// change the user password 
 const changepassword = asyncHandler(async(req,res,)=>{
    // get fields from the user 
    const{oldPassword,newPassword}=req.body
@@ -242,18 +241,19 @@ const changepassword = asyncHandler(async(req,res,)=>{
    .json(new apiResponse(200,{},"password changed successfully"))
 
 })
+// get current user
 const getCurrentuser = asyncHandler(async(req,res)=>{
    return res
    .status(200)
-   .json(200,req.user,"current user fatched successfully")
+   .json(new apiResponse(200,req.user,"current user fatched successfully"))
 })
-
+//update account details
 const updateAccountDetails = asyncHandler(async(req,res)=>{
    const{fullName,email}=req.body
    if(!fullName||!email){
       throw new ApiError(400,"all fields are required")
    }
-   const user = User.findByIdAndUpdate(req.user_id,
+   const user = await User.findByIdAndUpdate(req.user_id,
       {
          $set:{
             fullName,
@@ -266,7 +266,7 @@ return res
 .status(200)
 .json(new apiResponse(200,user,"account details updated succfully"))
 })
-
+// update user avatar
 const updateUserAvatar = asyncHandler(async(req,res)=>{
    const avatarLocalPath = req.file?.path
    if(!avatarLocalPath){
@@ -276,7 +276,7 @@ const updateUserAvatar = asyncHandler(async(req,res)=>{
    if(!avatar.url){
       throw new ApiError(400,"error while uploading avatar on cloudnery during update")
    }
-   const user =User.findByIdAndUpdate(req.user?._id,{
+   const user =await User.findByIdAndUpdate(req.user?._id,{
       $set:avatar.url
    },{new:true}
 ).select("-password")
@@ -284,6 +284,7 @@ const updateUserAvatar = asyncHandler(async(req,res)=>{
    .status(200)
    .json(new apiResponse(200,user,"avatar updated successfuly"))
 })
+// update user coverimage
 const updateUserCoverImage = asyncHandler(async(req,res)=>{
    const coverImageLocalPath = req.file?.path
    if(!coverImageLocalPath){
@@ -293,7 +294,7 @@ const updateUserCoverImage = asyncHandler(async(req,res)=>{
    if(!coverImage.url){
       throw new ApiError(400,"error while uploading coverImage on cloudnery during update")
    }
-   const user =User.findByIdAndUpdate(req.user?._id,{
+   const user = await User.findByIdAndUpdate(req.user?._id,{
       $set:coverImage.url
    },{new:true}
 ).select("-password")
