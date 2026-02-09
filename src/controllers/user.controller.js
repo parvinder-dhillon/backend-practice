@@ -210,7 +210,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
 })
 // change the user password 
-const changepassword = asyncHandler(async (req, res,) => {
+const changePassword = asyncHandler(async (req, res,) => {
    // get fields from the user 
    const { oldPassword, newPassword } = req.body
    const user = await User.findById(req.user?._id)
@@ -227,7 +227,7 @@ const changepassword = asyncHandler(async (req, res,) => {
 
 })
 // get current user
-const getCurrentuser = asyncHandler(async (req, res) => {
+const getCurrentUser = asyncHandler(async (req, res) => {
    return res
       .status(200)
       .json(new apiResponse(200, req.user, "current user fatched successfully"))
@@ -445,8 +445,8 @@ const getWatchHistory = asyncHandler(async(req,res)=>{
                {
                   $lookup:{
                      from:"users",
-                     localField:"owner"
-                     foreignField:"_id"
+                     localField:"owner",
+                     foreignField:"_id",
                      as:"owner",
                      pipeline:[
                         {
@@ -488,10 +488,11 @@ export {
    loginUser,
    logoutUser,
    refreshAccessToken,
-   changepassword,
-   getCurrentuser,
+   changePassword,
+   getCurrentUser,
    updateAccountDetails,
    updateUserAvatar,
    updateCoverImage,
+   getUserChannelProfile,
    getWatchHistory
 }
