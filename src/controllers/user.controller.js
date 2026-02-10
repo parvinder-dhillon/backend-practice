@@ -130,7 +130,7 @@ const loginUser = asyncHandler(async (req, res) => {
    return res
       .status(200)
       .cookie("accessToken", accessToken, options)
-      .cookie("refreshToken", refreshToken, options)
+      .cookie("refreshToken",refreshToken, options)
       .json(
          new apiResponse(
             200,
@@ -172,8 +172,8 @@ const logoutUser = asyncHandler(async (req, res) => {
 })
 //   refreshAccesstoken
 const refreshAccessToken = asyncHandler(async (req, res) => {
-   const incomingRefreshToken = req.cookie.refreshToken || req.body.refreshToken
-   if (!incomingRefreshToken) {
+   const incomingRefreshToken = req.cookies.refreshToken||req.body.refreshToken
+   if (!incomingRefreshToken){
       throw new ApiError(401, "unauthorized request")
    }
    try {
@@ -195,12 +195,12 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       const { accessToken, newrefreshToken } = await generateAccessTokenAndRefreshTokens(user._id)
       return res
          .status(200)
-         .cookie("accessToken", accessToken)
-         .cookie("refreshToken", newrefreshToken)
+         .cookie("accessToken",accessToken,options)
+         .cookie("refreshToken",newrefreshToken,options)
          .json(
             new apiResponse(
                200,
-               { accessToken, refreshToken: newrefreshToken },
+               { accessToken, refreshToken: newrefreshToken},
                "Access token refreshed successfully"
             )
          )
@@ -229,8 +229,8 @@ const changePassword = asyncHandler(async (req, res,) => {
 // get current user
 const getCurrentUser = asyncHandler(async (req, res) => {
    return res
-      .status(200)
-      .json(new apiResponse(200, req.user, "current user fatched successfully"))
+   .status(200)
+   .json(new apiResponse(200,req.user, "current user fatched successfully"))
 })
 //update account details
 const updateAccountDetails = asyncHandler(async (req, res) => {
@@ -263,7 +263,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
    const oldPublicId = user.avatar?.public_id;
 
    //Get local file path
-   const avatarLocalPath = req.file?.path;
+   const avatarLocalPath =req.file?.path;
    if (!avatarLocalPath) {
       throw new ApiError(400, "Avatar file is missing");
    }
@@ -303,7 +303,7 @@ const updateCoverImage = asyncHandler(async (req, res) => {
    if (!user) {
       throw new ApiError(404, "User not found");
    }
-   //Store old avatar public_id (if exists)
+   //Store old coverImage public_id (if exists)
    const oldPublicId = user.coverImage?.public_id;
 
    //Get local file path
@@ -312,31 +312,31 @@ const updateCoverImage = asyncHandler(async (req, res) => {
       throw new ApiError(400, "Avatar file is missing");
    }
 
-   //Upload new avatar
-   const uploadedCoverImage = await uploadOnCloudinary(CoverImageLocalPath);
+   //Upload new coverImage
+   const uploadedCoverImage = await uploadOnCloudinary(coverImageLocalPath);
    if (!uploadedCoverImage?.url || !uploadedCoverImage?.public_id) {
       throw new ApiError(400, "Error uploading avatar to Cloudinary");
    }
 
    //Assign new avatar
    user.avatar = {
-      url: uploadedAvatar.url,
-      public_id: uploadedAvatar.public_id
+      url: uploadedCoverImage.url,
+      public_id: uploadedCoverImage.public_id
    };
    //CHECK if avatar actually changed ( MOST IMPORTANT LINE )
-   const avatarChanged = user.isModified("avatar");
+   const coverImageChanged = user.isModified("coverImage");
 
    //Save user
    const updatedUser = await user.save({ validateBeforeSave: false });
 
    //Delete old avatar ONLY if avatar changed and old exists
-   if (avatarChanged && oldPublicId) {
+   if (coverImageChanged && oldPublicId) {
       await deleteCloudnaryFile(oldPublicId);
    }
 
    //Send response
    return res.status(200).json(
-      new apiResponse(200, updatedUser, "Avatar updated successfully")
+      new apiResponse(200, updatedUser, "coverImageChanged updated successfully")
    );
 });
 // update user coverimage
@@ -358,15 +358,15 @@ const updateCoverImage = asyncHandler(async (req, res) => {
 //    .json(new apiResponse(200,user,"coverImage updated successfuly"))
 // })
 const getUserChannelProfile = asyncHandler(async (req, res) => {
-   const { username } = req.param
+   const {userName} = req.params
 
-   if (!username?.trim()) {
+   if (!userName?.trim()) {
       throw new ApiError(400, "username is missing")
    }
    const channel = await User.aggregate([
       {
          $match: {
-            username: username?.toLowerCase()
+            userName: userName?.toLowerCase()
          }
       },
       {
@@ -388,10 +388,10 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
       {
          $addFields: {
             subscriberCount: {
-               $size: "subscribers"
+               $size: "$subscribers"
             },
             channelSubscribedTocount: {
-               $size: "subscribedTo"
+               $size: "$subscribedTo"
             },
             isSubscribed: {
                $cond: {

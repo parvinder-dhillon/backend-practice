@@ -31,7 +31,7 @@ const deleteCloudnaryFile = async(public_id)=>{
     try {
         if(!public_id) return null
 
-        const response = await cloudinary.uploader.destroy(public_id)
+        await cloudinary.uploader.destroy(public_id)
         
     } catch (error) {
         return error
